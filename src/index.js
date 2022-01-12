@@ -5,33 +5,38 @@ const multer = require("multer");
 const template = require("lodash.template");
 const fs = require("fs");
 
+const DS = require("./datastore");
+
 app.use(require("cors")({ origin: "*" }));
+app.get("/", (_, res) => res.status(200).send("Mail to Site service"));
 
-app.get("/", (_, res) => res.status(200).send("Mail test"));
+app.post(
+  "/",
 
-const DB = {};
+  // @todo Add middleware to secure this endpoint, only allow sendgrid to hit this
 
-// @todo Secure this endpoint, only allow sendgrid to hit this
-app.post("/", multer().any(), async (req, res) => {
-  const { to, from, subject, html, text, envelope } = req.body;
+  multer().any(),
 
-  console.log(req.body);
+  async (req, res) => {
+    // console.log(req.body);
 
-  // Use firebase add instead of generating like this to ensure no collisions
-  const key = Math.random().toString(36).slice(2, 8);
-  DB[key] = { to, from, subject, html };
+    const { to, from, subject, html, text, envelope } = req.body;
 
-  // Reply this to the email!
-  console.log(`http://localhost:3000/site/${key}`);
+    // Reply link to the email!
+    const link = await DS.add({ to, from, subject, html });
+    console.log(link);
 
-  res.status(200).end();
-});
+    res.status(200).end();
+  }
+);
 
-app.get("/site/:key", (req, res) => {
-  const item = DB[req.params.key];
+app.get("/site/:key", async (req, res) => {
+  const item = await DS.get(req.params.key);
 
+  // Send a 404 page instead of just this
   if (!item) return res.status(404).end();
 
+  // @todo Refactor this out
   const compiler = template(
     fs.readFileSync(__dirname + "/template.html", "utf8")
   );
@@ -41,19 +46,6 @@ app.get("/site/:key", (req, res) => {
       title: item.subject,
       content: item.html,
       from: item.from,
-    })
-  );
-});
-
-app.get("/example", (req, res) => {
-  const compiler = template(
-    fs.readFileSync(__dirname + "/template.html", "utf8")
-  );
-  res.status(200).send(
-    compiler({
-      title: "test title!!",
-      content: "some content",
-      from: "jaimeloeuf@gmail.com",
     })
   );
 });
