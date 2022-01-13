@@ -1,1 +1,1 @@
-module.exports = require("./datastore-local.js");
+module.exports = require("./datastore-fs.js");
