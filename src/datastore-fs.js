@@ -13,6 +13,7 @@ module.exports = {
     fs
       .collection("data")
       .doc(key)
+      .get()
       .then((snapshot) => snapshot.data()),
 
   del: async (key) => fs.collection("data").doc(key).delete(),
