@@ -18,11 +18,13 @@ app.post(
   multer().any(),
 
   async (req, res) => {
-    // console.log(req.body);
-
     const { to, from, subject, html, text, envelope } = req.body;
 
-    // Reply link to the email!
+    // If the email is forwarded to an invalid address, ignore it but let sendgrid know that it is received with HTTP 200
+    // @todo Might email user to let them know that it was unsuccessful
+    if (to !== "post@m2s.enkeldigital.com") return res.status(200).end();
+
+    // @todo Reply link to the email!
     const link = await DS.add({ to, from, subject, html });
     console.log(link);
 
