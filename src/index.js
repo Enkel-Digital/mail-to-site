@@ -32,13 +32,9 @@ app.post(
   }
 );
 
-app.get("/site/:key", async (req, res) => {
-  const item = await DS.get(req.params.key);
-
-  // Send a 404 page instead of just this
-  if (!item) return res.status(404).end();
-
+function complete(res, item) {
   // @todo Refactor this out
+  // Might change this to an async read? Or actually if it is a shared template for all then its ok to be sync read?
   const compiler = template(
     fs.readFileSync(__dirname + "/template.html", "utf8")
   );
@@ -50,6 +46,18 @@ app.get("/site/:key", async (req, res) => {
       from: item.from,
     })
   );
+}
+
+app.get("/site/:key", async (req, res) => {
+  const item = await DS.get(req.params.key);
+
+  // Send a 404 page instead of just this
+  if (!item)
+    return res
+      .status(404)
+      .send(fs.readFileSync(__dirname + "/404.html", "utf8"));
+
+  return complete(res, item);
 });
 
 const port = process.env.PORT || 3000; // Defaults to PORT 3000
